@@ -3,7 +3,6 @@
 const crypto = require('crypto');
 const asn1 = require('asn1.js');
 const jws = require('jws');
-const { URL } = require('url');
 
 const WebPushConstants = require('./web-push-constants.cjs');
 const urlBase64Helper = require('./urlsafe-base64-helper.cjs');
@@ -39,28 +38,40 @@ function toPEM(key) {
 
 
 function validateSubject(subject) {
-  if (!subject) {
-    throw new Error('No subject set in vapidDetails.subject.');
-  }
-
-  if (typeof subject !== 'string' || subject.length === 0) {
-    throw new Error('The subject value must be a string containing an https: URL or '
-    + 'mailto: address. ' + subject);
-  }
-
-  try {
-    const subjectParseResult = new URL(subject);
-    if (!['https:', 'mailto:'].includes(subjectParseResult.protocol)) {
-      throw new Error('Vapid subject is not an https: or mailto: URL. ' + subject);
+    if (!subject) {
+        throw new Error('No subject set in vapidDetails.subject.');
     }
-    if (subjectParseResult.hostname === 'localhost') {
-      console.warn('Vapid subject points to a localhost web URI, which is unsupported by '
-        + 'Apple\'s push notification server and will result in a BadJwtToken error when '
-        + 'sending notifications.');
+
+    if (typeof subject !== 'string' || subject.length === 0) {
+        throw new Error('The subject value must be a string containing an https: URL or '
+            + 'mailto: address. ' + subject);
     }
-  } catch (err) {
-    throw new Error('Vapid subject is not a valid URL. ' + subject);
-  }
+
+    try {
+        // Check if the subject starts with 'https:' or 'mailto:'
+        if (!/^https:|mailto:/.test(subject)) {
+            throw new Error('Vapid subject is not an https: or mailto: URL. ' + subject);
+        }
+
+        // Extract the hostname if the protocol is 'https:'
+        if (subject.startsWith('https:')) {
+            const hostnameMatch = subject.match(/^https:\/\/([^/]+)/);
+            const hostname = hostnameMatch ? hostnameMatch[1] : null;
+
+            if (!hostname) {
+                throw new Error('Invalid https URL format: ' + subject);
+            }
+
+            if (hostname === 'localhost') {
+                console.warn('Vapid subject points to a localhost web URI, which is unsupported by '
+                    + 'Apple\'s push notification server and will result in a BadJwtToken error when '
+                    + 'sending notifications.');
+            }
+        }
+    } catch (err) {
+        throw new Error('Vapid subject is not a valid URL. ' + subject);
+    }
+
 }
 
 function validatePublicKey(publicKey) {
