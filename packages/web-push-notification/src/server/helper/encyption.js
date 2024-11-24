@@ -68,9 +68,9 @@ export const encrypt = async function (
     } else if (checkEnvironment() === "Deno") {
     } else if (checkEnvironment() === "Cloudflare") {
         /** @type {webcrypto} */
-        const web_crypto = globalThis.crypto;
+        // const web_crypto = globalThis.crypto;
         const namedCurve = "P-256";
-        const keys = await web_crypto.subtle.generateKey(
+        const keys = await crypto.subtle.generateKey(
             {
                 name: "ECDH",
                 namedCurve: namedCurve,
@@ -81,7 +81,7 @@ export const encrypt = async function (
         localPrivateKey = keys.privateKey;
         localPublicKey = keys.publicKey;
         let array = new Uint8Array(16);
-        web_crypto.getRandomValues(array);
+        crypto.getRandomValues(array);
         let salt = btoa(String.fromCharCode.apply(null, array))
             .replace(/\+/g, "-")
             .replace(/\//g, "_")
