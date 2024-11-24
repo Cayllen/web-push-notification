@@ -1,6 +1,5 @@
 'use strict';
 
-const crypto = require('crypto');
 const asn1 = require('asn1.js');
 const jws = require('jws');
 
@@ -15,25 +14,25 @@ const DEFAULT_EXPIRATION_SECONDS = 12 * 60 * 60;
 // Maximum expiration is 24 hours according. (See VAPID spec)
 const MAX_EXPIRATION_SECONDS = 24 * 60 * 60;
 
-const ECPrivateKeyASN = asn1.define('ECPrivateKey', function() {
-  this.seq().obj(
-    this.key('version').int(),
-    this.key('privateKey').octstr(),
-    this.key('parameters').explicit(0).objid()
-      .optional(),
-    this.key('publicKey').explicit(1).bitstr()
-      .optional()
-  );
+const ECPrivateKeyASN = asn1.define('ECPrivateKey', function () {
+    this.seq().obj(
+        this.key('version').int(),
+        this.key('privateKey').octstr(),
+        this.key('parameters').explicit(0).objid()
+            .optional(),
+        this.key('publicKey').explicit(1).bitstr()
+            .optional()
+    );
 });
 
 function toPEM(key) {
-  return ECPrivateKeyASN.encode({
-    version: 1,
-    privateKey: key,
-    parameters: [1, 2, 840, 10045, 3, 1, 7] // prime256v1
-  }, 'pem', {
-    label: 'EC PRIVATE KEY'
-  });
+    return ECPrivateKeyASN.encode({
+        version: 1,
+        privateKey: key,
+        parameters: [1, 2, 840, 10045, 3, 1, 7] // prime256v1
+    }, 'pem', {
+        label: 'EC PRIVATE KEY'
+    });
 }
 
 
@@ -75,45 +74,45 @@ function validateSubject(subject) {
 }
 
 function validatePublicKey(publicKey) {
-  if (!publicKey) {
-    throw new Error('No key set vapidDetails.publicKey');
-  }
+    if (!publicKey) {
+        throw new Error('No key set vapidDetails.publicKey');
+    }
 
-  if (typeof publicKey !== 'string') {
-    throw new Error('Vapid public key is must be a URL safe Base 64 '
-    + 'encoded string.');
-  }
+    if (typeof publicKey !== 'string') {
+        throw new Error('Vapid public key is must be a URL safe Base 64 '
+            + 'encoded string.');
+    }
 
-  if (!urlBase64Helper.validate(publicKey)) {
-    throw new Error('Vapid public key must be a URL safe Base 64 (without "=")');
-  }
+    if (!urlBase64Helper.validate(publicKey)) {
+        throw new Error('Vapid public key must be a URL safe Base 64 (without "=")');
+    }
 
-  publicKey = Buffer.from(publicKey, 'base64url');
+    publicKey = Buffer.from(publicKey, 'base64url');
 
-  if (publicKey.length !== 65) {
-    throw new Error('Vapid public key should be 65 bytes long when decoded.');
-  }
+    if (publicKey.length !== 65) {
+        throw new Error('Vapid public key should be 65 bytes long when decoded.');
+    }
 }
 
 function validatePrivateKey(privateKey) {
-  if (!privateKey) {
-    throw new Error('No key set in vapidDetails.privateKey');
-  }
+    if (!privateKey) {
+        throw new Error('No key set in vapidDetails.privateKey');
+    }
 
-  if (typeof privateKey !== 'string') {
-    throw new Error('Vapid private key must be a URL safe Base 64 '
-    + 'encoded string.');
-  }
+    if (typeof privateKey !== 'string') {
+        throw new Error('Vapid private key must be a URL safe Base 64 '
+            + 'encoded string.');
+    }
 
-  if (!urlBase64Helper.validate(privateKey)) {
-    throw new Error('Vapid private key must be a URL safe Base 64 (without "=")');
-  }
+    if (!urlBase64Helper.validate(privateKey)) {
+        throw new Error('Vapid private key must be a URL safe Base 64 (without "=")');
+    }
 
-  privateKey = Buffer.from(privateKey, 'base64url');
+    privateKey = Buffer.from(privateKey, 'base64url');
 
-  if (privateKey.length !== 32) {
-    throw new Error('Vapid private key should be 32 bytes long when decoded.');
-  }
+    if (privateKey.length !== 32) {
+        throw new Error('Vapid private key should be 32 bytes long when decoded.');
+    }
 }
 
 /**
@@ -125,9 +124,9 @@ function validatePrivateKey(privateKey) {
  * @return {Number} Future expiration in seconds
  */
 function getFutureExpirationTimestamp(numSeconds) {
-  const futureExp = new Date();
-  futureExp.setSeconds(futureExp.getSeconds() + numSeconds);
-  return Math.floor(futureExp.getTime() / 1000);
+    const futureExp = new Date();
+    futureExp.setSeconds(futureExp.getSeconds() + numSeconds);
+    return Math.floor(futureExp.getTime() / 1000);
 }
 
 /**
@@ -137,21 +136,21 @@ function getFutureExpirationTimestamp(numSeconds) {
  * @param {Number} expiration Expiration seconds from Epoch to be validated
  */
 function validateExpiration(expiration) {
-  if (!Number.isInteger(expiration)) {
-    throw new Error('`expiration` value must be a number');
-  }
+    if (!Number.isInteger(expiration)) {
+        throw new Error('`expiration` value must be a number');
+    }
 
-  if (expiration < 0) {
-    throw new Error('`expiration` must be a positive integer');
-  }
+    if (expiration < 0) {
+        throw new Error('`expiration` must be a positive integer');
+    }
 
-  // Roughly checks the time of expiration, since the max expiration can be ahead
-  // of the time than at the moment the expiration was generated
-  const maxExpirationTimestamp = getFutureExpirationTimestamp(MAX_EXPIRATION_SECONDS);
+    // Roughly checks the time of expiration, since the max expiration can be ahead
+    // of the time than at the moment the expiration was generated
+    const maxExpirationTimestamp = getFutureExpirationTimestamp(MAX_EXPIRATION_SECONDS);
 
-  if (expiration >= maxExpirationTimestamp) {
-    throw new Error('`expiration` value is greater than maximum of 24 hours');
-  }
+    if (expiration >= maxExpirationTimestamp) {
+        throw new Error('`expiration` value is greater than maximum of 24 hours');
+    }
 }
 
 /**
@@ -168,70 +167,70 @@ function validateExpiration(expiration) {
  * 'Crypto-Key' values to be used as headers.
  */
 function getVapidHeaders(audience, subject, publicKey, privateKey, contentEncoding, expiration) {
-  if (!audience) {
-    throw new Error('No audience could be generated for VAPID.');
-  }
+    if (!audience) {
+        throw new Error('No audience could be generated for VAPID.');
+    }
 
-  if (typeof audience !== 'string' || audience.length === 0) {
-    throw new Error('The audience value must be a string containing the '
-    + 'origin of a push service. ' + audience);
-  }
+    if (typeof audience !== 'string' || audience.length === 0) {
+        throw new Error('The audience value must be a string containing the '
+            + 'origin of a push service. ' + audience);
+    }
 
-  try {
-    new URL(audience); // eslint-disable-line no-new
-  } catch (err) {
-    throw new Error('VAPID audience is not a url. ' + audience);
-  }
+    try {
+        new URL(audience); // eslint-disable-line no-new
+    } catch (err) {
+        throw new Error('VAPID audience is not a url. ' + audience);
+    }
 
-  validateSubject(subject);
-  validatePublicKey(publicKey);
-  validatePrivateKey(privateKey);
+    validateSubject(subject);
+    validatePublicKey(publicKey);
+    validatePrivateKey(privateKey);
 
-  privateKey = Buffer.from(privateKey, 'base64url');
+    privateKey = Buffer.from(privateKey, 'base64url');
 
-  if (expiration) {
-    validateExpiration(expiration);
-  } else {
-    expiration = getFutureExpirationTimestamp(DEFAULT_EXPIRATION_SECONDS);
-  }
+    if (expiration) {
+        validateExpiration(expiration);
+    } else {
+        expiration = getFutureExpirationTimestamp(DEFAULT_EXPIRATION_SECONDS);
+    }
 
-  const header = {
-    typ: 'JWT',
-    alg: 'ES256'
-  };
-
-  const jwtPayload = {
-    aud: audience,
-    exp: expiration,
-    sub: subject
-  };
-
-  const jwt = jws.sign({
-    header: header,
-    payload: jwtPayload,
-    privateKey: toPEM(privateKey)
-  });
-
-  if (contentEncoding === WebPushConstants.supportedContentEncodings.AES_128_GCM) {
-    return {
-      Authorization: 'vapid t=' + jwt + ', k=' + publicKey
+    const header = {
+        typ: 'JWT',
+        alg: 'ES256'
     };
-  }
-  if (contentEncoding === WebPushConstants.supportedContentEncodings.AES_GCM) {
-    return {
-      Authorization: 'WebPush ' + jwt,
-      'Crypto-Key': 'p256ecdsa=' + publicKey
-    };
-  }
 
-  throw new Error('Unsupported encoding type specified.');
+    const jwtPayload = {
+        aud: audience,
+        exp: expiration,
+        sub: subject
+    };
+
+    const jwt = jws.sign({
+        header: header,
+        payload: jwtPayload,
+        privateKey: toPEM(privateKey)
+    });
+
+    if (contentEncoding === WebPushConstants.supportedContentEncodings.AES_128_GCM) {
+        return {
+            Authorization: 'vapid t=' + jwt + ', k=' + publicKey
+        };
+    }
+    if (contentEncoding === WebPushConstants.supportedContentEncodings.AES_GCM) {
+        return {
+            Authorization: 'WebPush ' + jwt,
+            'Crypto-Key': 'p256ecdsa=' + publicKey
+        };
+    }
+
+    throw new Error('Unsupported encoding type specified.');
 }
 
 module.exports = {
-  getFutureExpirationTimestamp: getFutureExpirationTimestamp,
-  getVapidHeaders: getVapidHeaders,
-  validateSubject: validateSubject,
-  validatePublicKey: validatePublicKey,
-  validatePrivateKey: validatePrivateKey,
-  validateExpiration: validateExpiration
+    getFutureExpirationTimestamp: getFutureExpirationTimestamp,
+    getVapidHeaders: getVapidHeaders,
+    validateSubject: validateSubject,
+    validatePublicKey: validatePublicKey,
+    validatePrivateKey: validatePrivateKey,
+    validateExpiration: validateExpiration
 };
