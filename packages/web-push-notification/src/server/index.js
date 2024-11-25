@@ -1,5 +1,5 @@
 import { encrypt } from "./helper/encyption.js";
-import pkg from "./helper/vapid-helper.cjs";
+import pkg from "./helper/vapid-helper.js";
 const { getVapidHeaders } = pkg;
 
 // Default TTL is four weeks.
@@ -7,16 +7,16 @@ const DEFAULT_TTL = 2419200;
 
 var supportedContentEncodings;
 (function (supportedContentEncodings) {
-  supportedContentEncodings["AES_GCM"] = "aesgcm";
-  supportedContentEncodings["AES_128_GCM"] = "aes128gcm";
+    supportedContentEncodings["AES_GCM"] = "aesgcm";
+    supportedContentEncodings["AES_128_GCM"] = "aes128gcm";
 })(supportedContentEncodings || (supportedContentEncodings = {}));
 
 var supportedUrgency;
 (function (supportedUrgency) {
-  supportedUrgency["VERY_LOW"] = "very-low";
-  supportedUrgency["LOW"] = "low";
-  supportedUrgency["NORMAL"] = "normal";
-  supportedUrgency["HIGH"] = "high";
+    supportedUrgency["VERY_LOW"] = "very-low";
+    supportedUrgency["LOW"] = "low";
+    supportedUrgency["NORMAL"] = "normal";
+    supportedUrgency["HIGH"] = "high";
 })(supportedUrgency || (supportedUrgency = {}));
 
 /**
@@ -35,189 +35,189 @@ var supportedUrgency;
  * contains 'endpoint', 'method', 'headers' and 'payload'.
  */
 const generateRequestDetails = async function (
-  subscription,
-  payload, // #TODO change to Buffer?? Or more complex type?
-  vapidDetails,
-  options
+    subscription,
+    payload, // #TODO change to Buffer?? Or more complex type?
+    vapidDetails,
+    options
 ) {
-  if (typeof subscription == "string") {
-    subscription = JSON.parse(subscription);
-  }
-  if (!subscription || !subscription.endpoint) {
-    throw new Error(
-      "You must pass in a subscription with at least " + "an endpoint."
-    );
-  }
-  if (
-    typeof subscription.endpoint !== "string" ||
-    subscription.endpoint.length === 0
-  ) {
-    throw new Error(
-      "The subscription endpoint must be a string with " + "a valid URL."
-    );
-  }
-  if (payload) {
-    // Validate the subscription keys
+    if (typeof subscription == "string") {
+        subscription = JSON.parse(subscription);
+    }
+    if (!subscription || !subscription.endpoint) {
+        throw new Error(
+            "You must pass in a subscription with at least " + "an endpoint."
+        );
+    }
     if (
-      typeof subscription !== "object" ||
-      !subscription.keys ||
-      !subscription.keys.p256dh ||
-      !subscription.keys.auth
+        typeof subscription.endpoint !== "string" ||
+        subscription.endpoint.length === 0
     ) {
-      throw new Error(
-        "To send a message with a payload, the " +
-          "subscription must have 'auth' and 'p256dh' keys."
-      );
-    }
-  }
-  let currentVapidDetails = vapidDetails;
-  let timeToLive = DEFAULT_TTL;
-  let contentEncoding = supportedContentEncodings.AES_128_GCM;
-  let urgency = supportedUrgency.NORMAL;
-  let topic;
-  if (options) {
-    const validOptionKeys = [
-      "headers",
-      "vapidDetails",
-      "TTL",
-      "contentEncoding",
-      "urgency",
-      "topic",
-    ];
-    const optionKeys = Object.keys(options);
-    for (let i = 0; i < optionKeys.length; i += 1) {
-      const optionKey = optionKeys[i];
-      if (!validOptionKeys.includes(optionKey)) {
         throw new Error(
-          "'" +
-            optionKey +
-            "' is an invalid option. " +
-            "The valid options are ['" +
-            validOptionKeys.join("', '") +
-            "']."
+            "The subscription endpoint must be a string with " + "a valid URL."
         );
-      }
     }
-    if (options.TTL !== undefined) {
-      timeToLive = Number(options.TTL);
-      if (timeToLive < 0) {
-        throw new Error("TTL should be a number and should be at least 0");
-      }
+    if (payload) {
+        // Validate the subscription keys
+        if (
+            typeof subscription !== "object" ||
+            !subscription.keys ||
+            !subscription.keys.p256dh ||
+            !subscription.keys.auth
+        ) {
+            throw new Error(
+                "To send a message with a payload, the " +
+                "subscription must have 'auth' and 'p256dh' keys."
+            );
+        }
     }
-    if (options.contentEncoding) {
-      if (
-        options.contentEncoding === supportedContentEncodings.AES_128_GCM ||
-        options.contentEncoding === supportedContentEncodings.AES_GCM
-      ) {
-        contentEncoding = options.contentEncoding;
-      } else {
-        throw new Error("Unsupported content encoding specified.");
-      }
+    let currentVapidDetails = vapidDetails;
+    let timeToLive = DEFAULT_TTL;
+    let contentEncoding = supportedContentEncodings.AES_128_GCM;
+    let urgency = supportedUrgency.NORMAL;
+    let topic;
+    if (options) {
+        const validOptionKeys = [
+            "headers",
+            "vapidDetails",
+            "TTL",
+            "contentEncoding",
+            "urgency",
+            "topic",
+        ];
+        const optionKeys = Object.keys(options);
+        for (let i = 0; i < optionKeys.length; i += 1) {
+            const optionKey = optionKeys[i];
+            if (!validOptionKeys.includes(optionKey)) {
+                throw new Error(
+                    "'" +
+                    optionKey +
+                    "' is an invalid option. " +
+                    "The valid options are ['" +
+                    validOptionKeys.join("', '") +
+                    "']."
+                );
+            }
+        }
+        if (options.TTL !== undefined) {
+            timeToLive = Number(options.TTL);
+            if (timeToLive < 0) {
+                throw new Error("TTL should be a number and should be at least 0");
+            }
+        }
+        if (options.contentEncoding) {
+            if (
+                options.contentEncoding === supportedContentEncodings.AES_128_GCM ||
+                options.contentEncoding === supportedContentEncodings.AES_GCM
+            ) {
+                contentEncoding = options.contentEncoding;
+            } else {
+                throw new Error("Unsupported content encoding specified.");
+            }
+        }
+        if (options.urgency) {
+            if (
+                options.urgency === supportedUrgency.VERY_LOW ||
+                options.urgency === supportedUrgency.LOW ||
+                options.urgency === supportedUrgency.NORMAL ||
+                options.urgency === supportedUrgency.HIGH
+            ) {
+                urgency = options.urgency;
+            } else {
+                throw new Error("Unsupported urgency specified.");
+            }
+        }
+        if (options.topic) {
+            if (!/^[A-Za-z0-9\-_]+$/.test(options.topic)) {
+                throw new Error(
+                    "Unsupported characters set use the URL or filename-safe Base64 characters set"
+                );
+            }
+            if (options.topic.length > 32) {
+                throw new Error(
+                    "use maximum of 32 characters from the URL or filename-safe Base64 characters set"
+                );
+            }
+            topic = options.topic;
+        }
     }
-    if (options.urgency) {
-      if (
-        options.urgency === supportedUrgency.VERY_LOW ||
-        options.urgency === supportedUrgency.LOW ||
-        options.urgency === supportedUrgency.NORMAL ||
-        options.urgency === supportedUrgency.HIGH
-      ) {
-        urgency = options.urgency;
-      } else {
-        throw new Error("Unsupported urgency specified.");
-      }
+    if (typeof timeToLive === "undefined") {
+        timeToLive = DEFAULT_TTL;
     }
-    if (options.topic) {
-      if (!/^[A-Za-z0-9\-_]+$/.test(options.topic)) {
-        throw new Error(
-          "Unsupported characters set use the URL or filename-safe Base64 characters set"
-        );
-      }
-      if (options.topic.length > 32) {
-        throw new Error(
-          "use maximum of 32 characters from the URL or filename-safe Base64 characters set"
-        );
-      }
-      topic = options.topic;
-    }
-  }
-  if (typeof timeToLive === "undefined") {
-    timeToLive = DEFAULT_TTL;
-  }
-  const requestDetails = {
-    method: "POST",
-    headers: {
-      TTL: timeToLive,
-    },
-    endpoint: subscription.endpoint,
-  };
-  //TODO necessary?
-  //   Object.keys(extraHeaders).forEach(function (header) {
-  //     requestDetails.headers[header] = extraHeaders[header];
-  //   });
-  let requestPayload = null;
-  if (payload) {
-    const encrypted = await encrypt(
-      subscription.keys.p256dh,
-      subscription.keys.auth,
-      payload,
-      contentEncoding
-    );
-    requestDetails.headers = {
-      ...requestDetails.headers,
-      ...{
-        // "Content-Length": encrypted.cipherText.length,
-        "Content-Type": "application/octet-stream",
-      },
-    };
-    if (contentEncoding === supportedContentEncodings.AES_128_GCM) {
-      requestDetails.headers = {
-        ...requestDetails.headers,
-        ...{ "Content-Encoding": supportedContentEncodings.AES_128_GCM },
-      };
-    } else if (contentEncoding === supportedContentEncodings.AES_GCM) {
-      requestDetails.headers = {
-        ...requestDetails.headers,
-        ...{
-          "Content-Encoding": supportedContentEncodings.AES_GCM,
-          Encryption: "salt=" + encrypted.salt,
-          "Crypto-Key": "dh=" + encrypted.localPublicKey.toString("base64url"),
+    const requestDetails = {
+        method: "POST",
+        headers: {
+            TTL: timeToLive,
         },
-      };
-    }
-    requestDetails.body = encrypted.cipherText;
-  } else {
+        endpoint: subscription.endpoint,
+    };
     //TODO necessary?
-    // requestDetails.headers = {
-    //     ...requestDetails.headers,
-    //     ...{ "Content-Length": 0 },
-    //   };
-  }
-  const isFCM = subscription.endpoint.startsWith(
-    "https://fcm.googleapis.com/fcm/send"
-  );
-  // VAPID isn't supported by GCM hence the if, else if.
-  const parsedUrl = new URL(subscription.endpoint);
-  const audience = parsedUrl.protocol + "//" + parsedUrl.host;
-  const vapidHeaders = getVapidHeaders(
-    audience,
-    currentVapidDetails.subject,
-    currentVapidDetails.publicKey,
-    currentVapidDetails.privateKey,
-    contentEncoding
-  );
-  requestDetails.headers.Authorization = vapidHeaders.Authorization;
-  if (contentEncoding === supportedContentEncodings.AES_GCM) {
-    if (requestDetails.headers["Crypto-Key"]) {
-      requestDetails.headers["Crypto-Key"] += ";" + vapidHeaders["Crypto-Key"];
+    //   Object.keys(extraHeaders).forEach(function (header) {
+    //     requestDetails.headers[header] = extraHeaders[header];
+    //   });
+    let requestPayload = null;
+    if (payload) {
+        const encrypted = await encrypt(
+            subscription.keys.p256dh,
+            subscription.keys.auth,
+            payload,
+            contentEncoding
+        );
+        requestDetails.headers = {
+            ...requestDetails.headers,
+            ...{
+                // "Content-Length": encrypted.cipherText.length,
+                "Content-Type": "application/octet-stream",
+            },
+        };
+        if (contentEncoding === supportedContentEncodings.AES_128_GCM) {
+            requestDetails.headers = {
+                ...requestDetails.headers,
+                ...{ "Content-Encoding": supportedContentEncodings.AES_128_GCM },
+            };
+        } else if (contentEncoding === supportedContentEncodings.AES_GCM) {
+            requestDetails.headers = {
+                ...requestDetails.headers,
+                ...{
+                    "Content-Encoding": supportedContentEncodings.AES_GCM,
+                    Encryption: "salt=" + encrypted.salt,
+                    "Crypto-Key": "dh=" + encrypted.localPublicKey.toString("base64url"),
+                },
+            };
+        }
+        requestDetails.body = encrypted.cipherText;
     } else {
-      requestDetails.headers["Crypto-Key"] = vapidHeaders["Crypto-Key"]; //TODO REMOVE !
+        //TODO necessary?
+        // requestDetails.headers = {
+        //     ...requestDetails.headers,
+        //     ...{ "Content-Length": 0 },
+        //   };
     }
-  }
-  requestDetails.headers.Urgency = urgency;
-  if (topic) {
-    requestDetails.headers.Topic = topic;
-  }
-  return requestDetails;
+    const isFCM = subscription.endpoint.startsWith(
+        "https://fcm.googleapis.com/fcm/send"
+    );
+    // VAPID isn't supported by GCM hence the if, else if.
+    const parsedUrl = new URL(subscription.endpoint);
+    const audience = parsedUrl.protocol + "//" + parsedUrl.host;
+    const vapidHeaders = getVapidHeaders(
+        audience,
+        currentVapidDetails.subject,
+        currentVapidDetails.publicKey,
+        currentVapidDetails.privateKey,
+        contentEncoding
+    );
+    requestDetails.headers.Authorization = vapidHeaders.Authorization;
+    if (contentEncoding === supportedContentEncodings.AES_GCM) {
+        if (requestDetails.headers["Crypto-Key"]) {
+            requestDetails.headers["Crypto-Key"] += ";" + vapidHeaders["Crypto-Key"];
+        } else {
+            requestDetails.headers["Crypto-Key"] = vapidHeaders["Crypto-Key"]; //TODO REMOVE !
+        }
+    }
+    requestDetails.headers.Urgency = urgency;
+    if (topic) {
+        requestDetails.headers.Topic = topic;
+    }
+    return requestDetails;
 };
 
 /**
@@ -257,33 +257,33 @@ const generateRequestDetails = async function (
  * @return {Promise<Response>} Returns Fetch API's Response object.
  */
 export const sendNotification = async function (
-  notification,
-  subscription,
-  vapidDetails,
-  options
-) {
-  // #TODO Add validation of input
-  /*
-        vapidHelper.validateSubject(subject);
-        vapidHelper.validatePublicKey(publicKey);
-        vapidHelper.validatePrivateKey(privateKey);
-      */
-  let requestDetails = await generateRequestDetails(
+    notification,
     subscription,
-    JSON.stringify(notification),
     vapidDetails,
     options
-  );
+) {
+    // #TODO Add validation of input
+    /*
+          vapidHelper.validateSubject(subject);
+          vapidHelper.validatePublicKey(publicKey);
+          vapidHelper.validatePrivateKey(privateKey);
+        */
+    let requestDetails = await generateRequestDetails(
+        subscription,
+        JSON.stringify(notification),
+        vapidDetails,
+        options
+    );
 
-  const requestOptions = {
-    method: requestDetails.method,
-    headers: requestDetails.headers,
-    body: requestDetails.body,
-  };
+    const requestOptions = {
+        method: requestDetails.method,
+        headers: requestDetails.headers,
+        body: requestDetails.body,
+    };
 
-  const response = await fetch(requestDetails.endpoint, requestOptions);
+    const response = await fetch(requestDetails.endpoint, requestOptions);
 
-  return response;
+    return response;
 };
 
 /** @typedef {Object} VapidDetails

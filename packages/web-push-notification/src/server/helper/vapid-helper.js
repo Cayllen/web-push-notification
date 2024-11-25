@@ -3,8 +3,8 @@
 const asn1 = require('asn1.js');
 const jws = require('jws');
 
-const WebPushConstants = require('./web-push-constants.cjs');
-const urlBase64Helper = require('./urlsafe-base64-helper.cjs');
+const WebPushConstants = require('./web-push-constants.js');
+const urlBase64Helper = require('./urlsafe-base64-helper.js');
 
 /**
  * DEFAULT_EXPIRATION is set to seconds in 12 hours

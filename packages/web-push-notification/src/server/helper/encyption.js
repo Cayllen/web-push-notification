@@ -1,6 +1,6 @@
-// import { Buffer } from 'buffer';
-// import crypto from "crypto";
-// import ece from "http_ece";
+import { Buffer } from 'node:buffer';
+import crypto from "crypto";
+import ece from "http_ece";
 
 export const encrypt = async function (
     userPublicKey,
@@ -8,8 +8,6 @@ export const encrypt = async function (
     payload,
     contentEncoding
 ) {
-    console.log("checkEnvironment", checkEnvironment());
-
     if (!userPublicKey) {
         throw new Error("No user public key provided for encryption.");
     }
@@ -36,77 +34,78 @@ export const encrypt = async function (
     //   );
     // }
 
-    // if (typeof payload !== "string" && !Buffer.isBuffer(payload)) {
-    //     throw new Error("Payload must be either a string or a Node Buffer.");
-    // }
+    if (typeof payload !== "string" && !Buffer.isBuffer(payload)) {
+        throw new Error("Payload must be either a string or a Node Buffer.");
+    }
 
-    // if (typeof payload === "string" || payload instanceof String) {
-    //     payload = Buffer.from(payload);
-    // }
+    if (typeof payload === "string" || payload instanceof String) {
+        payload = Buffer.from(payload);
+    }
 
     let localPublicKey;
     let salt;
     let localPrivateKey;
     let cipherText;
+    console.log("checkEnvironment", checkEnvironment());
 
-    // if (checkEnvironment() === "Node") {
-    //     const localCurve = crypto.createECDH("prime256v1");
-    //     localPrivateKey = localCurve;
-    //     localPublicKey = localCurve.generateKeys();
-    //     salt = crypto.randomBytes(16).toString("base64url");
+    if (checkEnvironment() === "Node") {
+        const localCurve = crypto.createECDH("prime256v1");
+        localPrivateKey = localCurve;
+        localPublicKey = localCurve.generateKeys();
+        salt = crypto.randomBytes(16).toString("base64url");
 
-    //     console.log("localPublicKey", localPublicKey);
-    //     console.log("salt", salt);
-    //     console.log("localPrivateKey", localPrivateKey);
+        console.log("localPublicKey", localPublicKey);
+        console.log("salt", salt);
+        console.log("localPrivateKey", localPrivateKey);
 
-    //     cipherText = ece.encrypt(payload, {
-    //         version: contentEncoding,
-    //         dh: userPublicKey,
-    //         privateKey: localPrivateKey,
-    //         salt: salt,
-    //         authSecret: userAuth,
-    //     });
-    // } else if (checkEnvironment() === "Deno") {
-    // } else if (checkEnvironment() === "Cloudflare") {
-    //     /** @type {webcrypto} */
-    //     // const web_crypto = globalThis.crypto;
-    //     const namedCurve = "P-256";
-    //     const keys = await crypto.subtle.generateKey(
-    //         {
-    //             name: "ECDH",
-    //             namedCurve: namedCurve,
-    //         },
-    //         true,
-    //         ["deriveKey", "deriveBits"]
-    //     );
-    //     localPrivateKey = keys.privateKey;
-    //     localPublicKey = keys.publicKey;
-    //     let array = new Uint8Array(16);
-    //     crypto.getRandomValues(array);
-    //     let salt = btoa(String.fromCharCode.apply(null, array))
-    //         .replace(/\+/g, "-")
-    //         .replace(/\//g, "_")
-    //         .replace(/=+$/, "");
+        cipherText = ece.encrypt(payload, {
+            version: contentEncoding,
+            dh: userPublicKey,
+            privateKey: localPrivateKey,
+            salt: salt,
+            authSecret: userAuth,
+        });
+    } else if (checkEnvironment() === "Deno") {
+    } else if (checkEnvironment() === "Cloudflare") {
+        /** @type {webcrypto} */
+        // const web_crypto = globalThis.crypto;
+        const namedCurve = "P-256";
+        const keys = await crypto.subtle.generateKey(
+            {
+                name: "ECDH",
+                namedCurve: namedCurve,
+            },
+            true,
+            ["deriveKey", "deriveBits"]
+        );
+        localPrivateKey = keys.privateKey;
+        localPublicKey = keys.publicKey;
+        let array = new Uint8Array(16);
+        crypto.getRandomValues(array);
+        let salt = btoa(String.fromCharCode.apply(null, array))
+            .replace(/\+/g, "-")
+            .replace(/\//g, "_")
+            .replace(/=+$/, "");
 
-    //     console.log(salt);
+        console.log(salt);
 
-    //     // salt = web_crypto.getRandomValues(new Int8Array(16)).toString("base64url");
+        // salt = web_crypto.getRandomValues(new Int8Array(16)).toString("base64url");
 
-    //     console.log("localPublicKey", localPublicKey);
-    //     console.log("salt", salt);
-    //     console.log("localPrivateKey", localPrivateKey);
+        console.log("localPublicKey", localPublicKey);
+        console.log("salt", salt);
+        console.log("localPrivateKey", localPrivateKey);
 
-    //     cipherText = ece.encrypt(payload, {
-    //         version: contentEncoding,
-    //         dh: userPublicKey,
-    //         // privateKey: localPrivateKey,
-    //         keyid: localPublicKey,
-    //         salt: salt,
-    //         authSecret: userAuth,
-    //     });
-    // } else {
-    //     throw new Error("Unknown environment");
-    // }
+        cipherText = ece.encrypt(payload, {
+            version: contentEncoding,
+            dh: userPublicKey,
+            // privateKey: localPrivateKey,
+            keyid: localPublicKey,
+            salt: salt,
+            authSecret: userAuth,
+        });
+    } else {
+        throw new Error("Unknown environment");
+    }
 
     return {
         localPublicKey: localPublicKey,
